@@ -15,18 +15,32 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # Workaround for a known runner-images bug where the VC ATL component
-      # is present on disk but not registered on the compiler's default
-      # include path (https://github.com/actions/runner-images/issues/9873).
-      # Locate atlbase.h and add its directory to INCLUDE for later steps
-      # instead of paying the cost of reinstalling the VS component.
-      - name: Workaround missing ATL include path
+      # Workaround for a known runner-images bug where one MSVC toolset
+      # version's VC ATL component is missing its atlmfc folder entirely,
+      # while another co-installed toolset version has it intact
+      # (https://github.com/actions/runner-images/issues/9873). MSBuild's
+      # C++ toolchain computes its own include/lib paths from the specific
+      # toolset directory it resolves, so setting an ambient INCLUDE env
+      # var has no effect; instead, copy the atlmfc folder from a toolset
+      # that has it into any sibling toolset version that's missing it.
+      - name: Workaround missing ATL toolset files
         shell: pwsh
         run: |
-          $atlHeader = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio" -Recurse -Filter atlbase.h -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $atlHeader) { throw "atlbase.h not found under any Visual Studio install" }
-          Write-Host "Found ATL headers at $($atlHeader.DirectoryName)"
-          Add-Content $env:GITHUB_ENV "INCLUDE=$($atlHeader.DirectoryName);$env:INCLUDE"
+          $msvcRoots = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio" -Recurse -Directory -Filter MSVC -ErrorAction SilentlyContinue
+          if (-not $msvcRoots) { throw "Could not locate any VC\Tools\MSVC directory under Visual Studio" }
+          $fixedAny = $false
+          foreach ($msvcRoot in $msvcRoots) {
+            $toolsets = Get-ChildItem $msvcRoot.FullName -Directory
+            $withAtl = $toolsets | Where-Object { Test-Path (Join-Path $_.FullName "atlmfc\include\atlbase.h") }
+            $withoutAtl = $toolsets | Where-Object { -not (Test-Path (Join-Path $_.FullName "atlmfc\include\atlbase.h")) }
+            if (-not $withAtl) { continue }
+            foreach ($v in $withoutAtl) {
+              Write-Host "Copying ATL from $($withAtl[0].FullName) into toolset $($v.FullName) (missing ATL)"
+              Copy-Item -Path (Join-Path $withAtl[0].FullName "atlmfc") -Destination (Join-Path $v.FullName "atlmfc") -Recurse -Force
+              $fixedAny = $true
+            }
+          }
+          if (-not $fixedAny) { Write-Host "No missing-ATL toolsets found; nothing to fix" }
 
       - name: Build solution
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=x64
@@ -68,14 +82,25 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # Same ATL-include workaround as the x64 job; see comment there.
-      - name: Workaround missing ATL include path
+      # Same ATL-toolset workaround as the x64 job; see comment there.
+      - name: Workaround missing ATL toolset files
         shell: pwsh
         run: |
-          $atlHeader = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio" -Recurse -Filter atlbase.h -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $atlHeader) { throw "atlbase.h not found under any Visual Studio install" }
-          Write-Host "Found ATL headers at $($atlHeader.DirectoryName)"
-          Add-Content $env:GITHUB_ENV "INCLUDE=$($atlHeader.DirectoryName);$env:INCLUDE"
+          $msvcRoots = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio" -Recurse -Directory -Filter MSVC -ErrorAction SilentlyContinue
+          if (-not $msvcRoots) { throw "Could not locate any VC\Tools\MSVC directory under Visual Studio" }
+          $fixedAny = $false
+          foreach ($msvcRoot in $msvcRoots) {
+            $toolsets = Get-ChildItem $msvcRoot.FullName -Directory
+            $withAtl = $toolsets | Where-Object { Test-Path (Join-Path $_.FullName "atlmfc\include\atlbase.h") }
+            $withoutAtl = $toolsets | Where-Object { -not (Test-Path (Join-Path $_.FullName "atlmfc\include\atlbase.h")) }
+            if (-not $withAtl) { continue }
+            foreach ($v in $withoutAtl) {
+              Write-Host "Copying ATL from $($withAtl[0].FullName) into toolset $($v.FullName) (missing ATL)"
+              Copy-Item -Path (Join-Path $withAtl[0].FullName "atlmfc") -Destination (Join-Path $v.FullName "atlmfc") -Recurse -Force
+              $fixedAny = $true
+            }
+          }
+          if (-not $fixedAny) { Write-Host "No missing-ATL toolsets found; nothing to fix" }
 
       - name: Build solution
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=ARM64
