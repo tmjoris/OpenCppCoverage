@@ -44,7 +44,13 @@ IF EXIST vcpkg.exe GOTO VCPKG_EXISTS
 .\vcpkg install poco:arm64-windows
 .\vcpkg install protobuf:arm64-windows protobuf:x86-windows
 .\vcpkg install gtest:arm64-windows
-.\vcpkg install ctemplate:arm64-windows
+
+REM ctemplate's vcpkg.json declares "supports": "windows & !arm" (dating
+REM back to 2020, before this project's Windows ARM64 support matured).
+REM Its CMakeLists.txt/sources have no architecture-specific code, so
+REM --allow-unsupported is used to force the build past that stale
+REM restriction rather than replacing the library.
+.\vcpkg install ctemplate:arm64-windows --allow-unsupported
 .\vcpkg install boost-optional:arm64-windows
 .\vcpkg install boost-filesystem:arm64-windows
 .\vcpkg install boost-algorithm:arm64-windows
@@ -77,7 +83,7 @@ IF EXIST vcpkg.exe GOTO VCPKG_EXISTS
 	boost-uuid:arm64-windows ^
 	boost-locale:arm64-windows ^
 	boost-iostreams:arm64-windows ^
-	--nuget --nuget-id=ThirdParty --nuget-version=1.4.0
+	--nuget --nuget-id=ThirdParty --nuget-version=1.4.0 --allow-unsupported
 
 REM The vcpkg-bundled nuget.exe tool version is not pinned by this script
 REM (unlike BuildThirdPartyDependencies.bat, this uses a rolling vcpkg
