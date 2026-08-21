@@ -13,7 +13,7 @@ jobs:
         run: ./InstallThirdPartyLibraries.ps1
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.0.0
+        uses: microsoft/setup-msbuild@v2
 
       - name: Build solution
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=x64
@@ -53,7 +53,7 @@ jobs:
         run: .\BuildThirdPartyDependenciesArm64.bat
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.0.0
+        uses: microsoft/setup-msbuild@v2
 
       - name: Build solution
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=ARM64
