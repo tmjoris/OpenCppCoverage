@@ -38,23 +38,23 @@ namespace CppCoverageTest
 		}
 
 		//---------------------------------------------------------------------
-		std::vector<unsigned char> GenerateValues(int valueCount,
-		                                          int moduloValue)
+		std::vector<BreakPoint::OpCodeValue> GenerateValues(int valueCount,
+		                                                    int moduloValue)
 		{
-			std::vector<unsigned char> values;
+			std::vector<BreakPoint::OpCodeValue> values;
 
 			for (auto i = 0; i < valueCount; ++i)
-				values.push_back(i % moduloValue);
+				values.push_back(static_cast<BreakPoint::OpCodeValue>(i % moduloValue));
 			return values;
 		}
 
 		//---------------------------------------------------------------------
-		std::map<DWORD64, unsigned char> BuildOldInstructionsMap(
+		std::map<DWORD64, BreakPoint::OpCodeValue> BuildOldInstructionsMap(
 		    BreakPoint::InstructionCollection& oldInstructionCollection,
 		    const std::vector<DWORD64>& addresses)
 		{
 			std::set<DWORD64> addressesSet{addresses.begin(), addresses.end()};
-			std::map<DWORD64, unsigned char> oldInstructionsMap;
+			std::map<DWORD64, BreakPoint::OpCodeValue> oldInstructionsMap;
 
 			for (const auto& pair : oldInstructionCollection)
 			{
@@ -111,7 +111,7 @@ namespace CppCoverageTest
 	TEST(BreakPointTest, SetBreakPointsSingle)
 	{
 		CppCoverage::BreakPoint breakPoint;
-		unsigned char value = 42;
+		BreakPoint::OpCodeValue value = 42;
 
 		auto oldInstructionCollection =
 		    breakPoint.SetBreakPoints(GetCurrentProcess(), {ToDWORD64(&value)});

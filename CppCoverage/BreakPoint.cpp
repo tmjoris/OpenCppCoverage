@@ -17,6 +17,8 @@
 #include "stdafx.h"
 #include "BreakPoint.hpp"
 
+#include <cstring>
+
 #include "CppCoverageException.hpp"
 #include "Address.hpp"
 
@@ -47,15 +49,26 @@ namespace CppCoverage
 		for (auto it = begin; it < end; ++it)
 		{
 			auto index = static_cast<size_t>(*it - firstValue);
-			auto oldInstruction = buffer[index];
-			buffer[index] = BreakPoint::breakPointInstruction;
+			BreakPoint::OpCodeValue oldInstruction;
+			std::memcpy(&oldInstruction, &buffer[index], sizeof(oldInstruction));
+			std::memcpy(&buffer[index],
+			            &BreakPoint::breakPointInstruction,
+			            sizeof(BreakPoint::breakPointInstruction));
 			oldInstructions.emplace_back(oldInstruction, *it);
 		}
 		Tools::WriteProcessMemory(
 		    hProcess, firstAddress, &buffer[0], buffer.size());
 	}
 
-	const unsigned char BreakPoint::breakPointInstruction = 0xCC;
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+	// BRK #0xF000: the same software-breakpoint encoding used by
+	// ntdll!DbgBreakPoint on Windows ARM64 (in-memory little-endian bytes:
+	// 00 F0 3E D4), so it is recognized consistently by the OS and other
+	// debugging tools.
+	const BreakPoint::OpCodeValue BreakPoint::breakPointInstruction = 0xD43EF000;
+#else
+	const BreakPoint::OpCodeValue BreakPoint::breakPointInstruction = 0xCC;
+#endif
 
 	//-------------------------------------------------------------------------
 	BreakPoint::InstructionCollection
@@ -82,7 +95,7 @@ namespace CppCoverage
 
 	//-------------------------------------------------------------------------
 	void BreakPoint::RemoveBreakPoint(const Address& address,
-	                                  unsigned char oldInstruction) const
+	                                  OpCodeValue oldInstruction) const
 	{
 		Tools::WriteProcessMemory(address.GetProcessHandle(),
 		                          address.GetValue(),
@@ -93,6 +106,15 @@ namespace CppCoverage
 	//-------------------------------------------------------------------------
 	void BreakPoint::AdjustEipAfterBreakPointRemoval(HANDLE hThread) const
 	{
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+		// On ARM64, the PC captured at a BRK trap already points at the BRK
+		// instruction itself (unlike x86, where the CPU leaves Rip/Eip one
+		// byte *past* the 1-byte INT3). RemoveBreakPoint has already
+		// restored the original 4-byte instruction at that same address, so
+		// execution can resume from the unmodified PC: no register rewind
+		// is needed here.
+		(void)hThread;
+#else
 		CONTEXT lcContext;
 		lcContext.ContextFlags = CONTEXT_ALL;
 		if (!GetThreadContext(hThread, &lcContext))
@@ -105,5 +127,6 @@ namespace CppCoverage
 #endif
 		if (!SetThreadContext(hThread, &lcContext))
 			THROW_LAST_ERROR("Error in SetThreadContext", GetLastError());
+#endif
 	}
 }

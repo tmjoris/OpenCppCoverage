@@ -36,8 +36,11 @@ namespace Tools
 
 		if (machine == IMAGE_FILE_MACHINE_I386)
 			handler.OnNtHeader32(hProcess, baseOfImage, *ntHeader32);
-		else if (machine == IMAGE_FILE_MACHINE_AMD64)
+		else if (machine == IMAGE_FILE_MACHINE_AMD64 ||
+		         machine == IMAGE_FILE_MACHINE_ARM64)
 		{
+			// ARM64 PE binaries use the same IMAGE_NT_HEADERS64 (PE32+)
+			// layout as AMD64, so they share the 64-bit handler path.
 			auto ntHeader64 = ReadStructInProcessMemory<IMAGE_NT_HEADERS64>(
 			    hProcess, baseOfImage + dosHeader->e_lfanew);
 			handler.OnNtHeader64(hProcess, baseOfImage, *ntHeader64);

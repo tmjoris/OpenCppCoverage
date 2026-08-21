@@ -32,13 +32,13 @@ namespace CppCoverage
 	//-------------------------------------------------------------------------
 	struct ExecutedAddressManager::Line
 	{
-		explicit Line(unsigned char instructionToRestore, void* dllBaseOfImage)
+		explicit Line(BreakPoint::OpCodeValue instructionToRestore, void* dllBaseOfImage)
 			: instructionToRestore_{ instructionToRestore }
 			, dllBaseOfImage_{ dllBaseOfImage }
 		{
 		}
 
-		const unsigned char instructionToRestore_;
+		const BreakPoint::OpCodeValue instructionToRestore_;
 		void* const dllBaseOfImage_;
 		boost::container::small_vector<bool*, 1> hasBeenExecutedCollection_;
 	};
@@ -91,7 +91,7 @@ namespace CppCoverage
 		const Address& address,
 		const std::wstring& filename,
 		unsigned int lineNumber, 
-		unsigned char instructionValue)
+		BreakPoint::OpCodeValue instructionValue)
 	{
 		auto& module = GetLastAddedModule();
 		auto& file = module.files_[filename];
@@ -126,7 +126,7 @@ namespace CppCoverage
 	}
 
 	//-------------------------------------------------------------------------
-	boost::optional<unsigned char> ExecutedAddressManager::MarkAddressAsExecuted(
+	boost::optional<BreakPoint::OpCodeValue> ExecutedAddressManager::MarkAddressAsExecuted(
 		const Address& address)
 	{
 		auto it = addressLineMap_.find(address);

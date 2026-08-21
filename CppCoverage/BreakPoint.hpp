@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <Windows.h>
 #include "CppCoverageExport.hpp"
 
@@ -28,13 +29,23 @@ namespace CppCoverage
 	  public:
 		BreakPoint() = default;
 
-		static const unsigned char breakPointInstruction;
+		// Native width of the in-memory software breakpoint trap
+		// instruction for the current target architecture: a single INT3
+		// (0xCC) byte on x86/x64, or a full 4-byte BRK instruction on
+		// ARM64 (AArch64 has no sub-word instructions).
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+		using OpCodeValue = std::uint32_t;
+#else
+		using OpCodeValue = unsigned char;
+#endif
+
+		static const OpCodeValue breakPointInstruction;
 
 		void RemoveBreakPoint(const Address&,
-		                      unsigned char oldInstruction) const;
+		                      OpCodeValue oldInstruction) const;
 
 		using InstructionCollection =
-		    std::vector<std::pair<unsigned char, DWORD64>>;
+		    std::vector<std::pair<OpCodeValue, DWORD64>>;
 
 		InstructionCollection
 		SetBreakPoints(HANDLE hProcess, std::vector<DWORD64>&& addresses) const;
