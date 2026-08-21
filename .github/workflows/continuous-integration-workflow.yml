@@ -35,3 +35,44 @@ jobs:
 
       - name: Run ToolsTest
         run: .\x64\Debug\ToolsTest.exe
+
+  build-arm64:
+    name: Unit tests (ARM64)
+    # Native ARM64-hosted runner: builds and runs tests as genuine ARM64
+    # processes (no x64 cross-compilation, no emulation for our own code).
+    runs-on: windows-11-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # No prebuilt ARM64 ThirdParty NuGet package exists (upstream's
+      # OpenCppCoverageThirdParty releases only ever published x86/x64), so
+      # dependencies are built from source via vcpkg instead of
+      # InstallThirdPartyLibraries.ps1.
+      - name: Build third party libraries
+        run: .\BuildThirdPartyDependenciesArm64.bat
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.0.0
+
+      - name: Build solution
+        run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=ARM64
+
+      - name: Run CppCoverageTest
+        run: .\ARM64\Debug\CppCoverageTest.exe --gtest_filter=-CodeCoverageRunnerTest.OptimizedBuild # Require VS2013
+
+      - name: Run ExporterTest
+        run: .\ARM64\Debug\ExporterTest.exe
+
+      - name: Run FileFilterTest
+        run: .\ARM64\Debug\FileFilterTest.exe --gtest_filter=-RelocationsExtractorTest.Extract # Require mspdbcore.dll
+
+      - name: Run OpenCppCoverageTest
+        run: .\ARM64\Debug\OpenCppCoverageTest.exe
+
+      - name: Run PluginTest
+        run: .\ARM64\Debug\PluginTest.exe
+
+      - name: Run ToolsTest
+        run: .\ARM64\Debug\ToolsTest.exe
+
