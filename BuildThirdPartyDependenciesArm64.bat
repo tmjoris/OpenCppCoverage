@@ -91,9 +91,12 @@ REM vcpkg-overlays\ctemplate (see VCPKG_OVERLAY_PORTS above) fixes both.
 	boost-iostreams:arm64-windows ^
 	--nuget --nuget-id=ThirdParty --nuget-version=1.4.0
 
-REM The vcpkg-bundled nuget.exe tool version is not pinned by this script
-REM (unlike BuildThirdPartyDependencies.bat, this uses a rolling vcpkg
-REM checkout), so locate whatever version was actually downloaded instead of
-REM hardcoding its folder name.
-for /f "delims=" %%F in ('dir /s /b downloads\tools\nuget.exe') do set NUGET_EXE=%%F
-"%NUGET_EXE%" install ThirdParty -Source %ROOT_FOLDER%\vcpkg -OutputDirectory ..\..\..\packages
+REM Current vcpkg packs the --nuget export directly (no separate
+REM downloads\tools\nuget.exe helper is fetched anymore, unlike the pinned
+REM vcpkg commit BuildThirdPartyDependencies.bat still relies on), so fetch
+REM nuget.exe the same way InstallThirdPartyLibraries.ps1 does for the
+REM prebuilt x64/x86 package, then install our freshly built
+REM ThirdParty.1.4.0.nupkg from its own output directory (which doubles as
+REM a valid local NuGet feed) into packages\.
+powershell -NoProfile -Command "Invoke-WebRequest -OutFile nuget.exe https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
+.\nuget.exe install ThirdParty -Source %ROOT_FOLDER%\vcpkg -OutputDirectory ..\..\..\packages
