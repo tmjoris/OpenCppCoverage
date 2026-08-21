@@ -15,6 +15,19 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      # Workaround for a known runner-images bug where the VC ATL component
+      # is present on disk but not registered on the compiler's default
+      # include path (https://github.com/actions/runner-images/issues/9873).
+      # Locate atlbase.h and add its directory to INCLUDE for later steps
+      # instead of paying the cost of reinstalling the VS component.
+      - name: Workaround missing ATL include path
+        shell: pwsh
+        run: |
+          $atlHeader = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio" -Recurse -Filter atlbase.h -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $atlHeader) { throw "atlbase.h not found under any Visual Studio install" }
+          Write-Host "Found ATL headers at $($atlHeader.DirectoryName)"
+          Add-Content $env:GITHUB_ENV "INCLUDE=$($atlHeader.DirectoryName);$env:INCLUDE"
+
       - name: Build solution
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=x64
 
@@ -54,6 +67,15 @@ jobs:
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
+
+      # Same ATL-include workaround as the x64 job; see comment there.
+      - name: Workaround missing ATL include path
+        shell: pwsh
+        run: |
+          $atlHeader = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio" -Recurse -Filter atlbase.h -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $atlHeader) { throw "atlbase.h not found under any Visual Studio install" }
+          Write-Host "Found ATL headers at $($atlHeader.DirectoryName)"
+          Add-Content $env:GITHUB_ENV "INCLUDE=$($atlHeader.DirectoryName);$env:INCLUDE"
 
       - name: Build solution
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=ARM64
