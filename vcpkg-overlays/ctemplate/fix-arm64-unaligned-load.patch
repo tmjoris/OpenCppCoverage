@@ -1,0 +1,18 @@
+diff --git a/src/base/macros.h b/src/base/macros.h
+index 7b7d227..dd83f64 100644
+--- a/src/base/macros.h
++++ b/src/base/macros.h
+@@ -51,8 +51,11 @@
+ # define CTEMPLATE_BSWAP32_ALREADY_DEFINED
+ #endif
+ 
+-#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
+-  // We know they allow unaligned memory access and are little-endian
++#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64) || defined(_M_ARM64EC)
++  // We know they allow unaligned memory access and are little-endian.
++  // This also covers Windows on ARM64/ARM64EC: the ARM64 architecture
++  // permits unaligned loads/stores for ordinary (non-exclusive) memory
++  // accesses, and Windows always runs it little-endian.
+ # define UNALIGNED_LOAD32(_p) (*reinterpret_cast<const uint32_t*>(_p))
+ #elif defined(__ppc__) || defined(__ppc64__)
+   // We know they allow unaligned memory access and are big-endian

@@ -1,0 +1,5 @@
+# Unified diffs must keep LF line endings regardless of the checkout
+# platform's core.autocrlf setting: vcpkg applies these via `git apply`
+# against sources extracted with their original (LF) line endings, and a
+# CRLF-mangled patch either fails to apply or corrupts the patched lines.
+*.patch text eol=lf
