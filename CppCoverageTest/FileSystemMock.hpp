@@ -18,6 +18,12 @@
 
 #include "CppCoverage/IFileSystem.hpp"
 
+// Needed so GMock can print boost::optional<std::filesystem::file_time_type>
+// (GetLastWriteTime's return type) in verbose test output. Newer boost
+// versions (as built by vcpkg for arm64-windows, which has no prebuilt
+// package) static_assert if this header isn't included explicitly.
+#include <boost/optional/optional_io.hpp>
+
 namespace CppCoverageTest
 {
 	class FileSystemMock : public CppCoverage::IFileSystem
