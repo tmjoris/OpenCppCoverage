@@ -42,7 +42,12 @@ namespace TestCoverageConsole
 	//-------------------------------------------------------------------------
 	inline int GetTestCoverageConsoleCppMainStartLine()
 	{
-		return 56;
+		// This value must match the actual line of "int _tmain(...)" in
+		// TestCoverageConsole.cpp. CodeCoverageRunnerTest.cpp relies on fixed
+		// offsets from this line, so keep _tmain's internal structure (line
+		// count per dispatch branch) unchanged when editing that file, and
+		// only update this constant if _tmain's start line itself moves.
+		return 75;
 	}
 
 	//-------------------------------------------------------------------------
