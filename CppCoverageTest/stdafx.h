@@ -18,3 +18,12 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+
+// Needed so ASSERT_EQ/EXPECT_EQ can stream boost::optional<T> values (e.g.
+// boost::optional<std::filesystem::path>) in failure messages; without it,
+// boost::optional's own operator<< is only declared, not defined, and any
+// use of it hits a static_assert. FileSystemMock.hpp separately defines a
+// PrintTo() for boost::optional<std::filesystem::file_time_type>, which is
+// not itself streamable and is therefore excluded via GTest/GMock's PrintTo
+// > operator<< priority instead of relying on this header.
+#include <boost/optional/optional_io.hpp>
