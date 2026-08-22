@@ -18,11 +18,23 @@
 
 #include "CppCoverage/IFileSystem.hpp"
 
-// Needed so GMock can print boost::optional<std::filesystem::file_time_type>
-// (GetLastWriteTime's return type) in verbose test output. Newer boost
-// versions (as built by vcpkg for arm64-windows, which has no prebuilt
-// package) static_assert if this header isn't included explicitly.
-#include <boost/optional/optional_io.hpp>
+namespace boost
+{
+	// GMock's verbose output needs to print GetLastWriteTime's return type
+	// below. boost::optional<T> unconditionally declares its own operator<<
+	// (in optional.hpp), so GMock's printer-detection picks it over any
+	// fallback, but that operator<< requires T itself to be streamable -
+	// which std::filesystem::file_time_type is not - and fails to compile
+	// once instantiated. Defining PrintTo here (found via ADL, and given
+	// priority by GTest/GMock over operator<<) avoids that entirely.
+	inline void PrintTo(const boost::optional<std::filesystem::file_time_type>& value, std::ostream* os)
+	{
+		if (value)
+			*os << "file_time_type(present)";
+		else
+			*os << "none";
+	}
+}
 
 namespace CppCoverageTest
 {
