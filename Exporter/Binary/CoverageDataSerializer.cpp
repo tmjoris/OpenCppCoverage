@@ -32,7 +32,10 @@
 #include "ProtoBuff.hpp"
 #include "../InvalidOutputFileException.hpp"
 
-namespace pb = ProtoBuff;
+// Named CovDataPb rather than the shorter "pb" to avoid clashing with an
+// internal "pb" symbol declared by newer protobuf versions (as built by
+// vcpkg for arm64-windows, which has no prebuilt package).
+namespace CovDataPb = ProtoBuff;
 
 namespace Exporter
 {
@@ -41,7 +44,7 @@ namespace Exporter
 		//---------------------------------------------------------------------
 		void InitializeProtoBuffFrom(
 			const Plugin::FileCoverage& file,
-			pb::FileCoverage& fileProtoBuff)
+			CovDataPb::FileCoverage& fileProtoBuff)
 		{
 			fileProtoBuff.set_path(Tools::ToUtf8String(file.GetPath().wstring()));
 
@@ -57,7 +60,7 @@ namespace Exporter
 		//---------------------------------------------------------------------
 		void InitializeModuleProtoBuffFrom(
 			const Plugin::ModuleCoverage& module,
-			pb::ModuleCoverage& moduleProtoBuff)
+			CovDataPb::ModuleCoverage& moduleProtoBuff)
 		{
 			moduleProtoBuff.set_path(Tools::ToUtf8String(module.GetPath().wstring()));
 			
@@ -71,7 +74,7 @@ namespace Exporter
 		//---------------------------------------------------------------------
 		void FillCoverageDataProtoBuffFrom(
 			const Plugin::CoverageData& coverageData,
-			pb::CoverageData& coverageDataProtoBuff)
+			CovDataPb::CoverageData& coverageDataProtoBuff)
 		{
 			coverageDataProtoBuff.set_name(Tools::ToUtf8String(coverageData.GetName()));
 			coverageDataProtoBuff.set_exitcode(coverageData.GetExitCode());
@@ -97,7 +100,7 @@ namespace Exporter
 		const Plugin::CoverageData& coverageData,
 		const std::filesystem::path& output) const
 	{		
-		pb::CoverageData coverageDataProtoBuff;
+		CovDataPb::CoverageData coverageDataProtoBuff;
 		Tools::CreateParentFolderIfNeeded(output);
 
 		std::ofstream ofs(output.string(), std::ios::binary);
@@ -116,7 +119,7 @@ namespace Exporter
 		// See https://developers.google.com/protocol-buffers/docs/techniques#large-data
 		for (const auto& module : coverageData.GetModules())
 		{
-			pb::ModuleCoverage moduleProtoBuff;
+			CovDataPb::ModuleCoverage moduleProtoBuff;
 			InitializeModuleProtoBuffFrom(*module, moduleProtoBuff);
 
 			WriteMessage(moduleProtoBuff, codedOutputStream);

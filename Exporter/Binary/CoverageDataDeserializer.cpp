@@ -32,7 +32,10 @@
 #include "CoverageDataSerializer.hpp"
 #include "ProtoBuff.hpp"
 
-namespace pb = ProtoBuff;
+// Named CovDataPb rather than the shorter "pb" to avoid clashing with an
+// internal "pb" symbol declared by newer protobuf versions (as built by
+// vcpkg for arm64-windows, which has no prebuilt package).
+namespace CovDataPb = ProtoBuff;
 
 namespace Exporter
 {
@@ -58,14 +61,14 @@ namespace Exporter
 		//---------------------------------------------------------------------
 		void InitCoverageDataFrom(
 			google::protobuf::io::CodedInputStream&  input,
-			const pb::CoverageData& coverageDataProtoBuff,
+			const CovDataPb::CoverageData& coverageDataProtoBuff,
 			Plugin::CoverageData& coverageData)
 		{
 			auto moduleCount = coverageDataProtoBuff.modulecount();
 
 			for (size_t i = 0; i < moduleCount; ++i)
 			{
-				pb::ModuleCoverage moduleProtoBuff;
+				CovDataPb::ModuleCoverage moduleProtoBuff;
 
 				ReadMessage(input, moduleProtoBuff);				
 				auto& module = coverageData.AddModule(Tools::Utf8ToWString(moduleProtoBuff.path()));
@@ -92,7 +95,7 @@ namespace Exporter
 			if (!codedInputStream.ReadVarint32(&fileTypeId) || fileTypeId != CoverageDataSerializer::FileTypeId)
 				throw std::runtime_error(errorIfNotCorrectFormat);
 
-			pb::CoverageData coverageDataProtoBuff;
+			CovDataPb::CoverageData coverageDataProtoBuff;
 
 			ReadMessage(codedInputStream, coverageDataProtoBuff);
 
