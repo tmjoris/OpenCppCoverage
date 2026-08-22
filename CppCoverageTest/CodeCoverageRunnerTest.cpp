@@ -46,10 +46,13 @@
 #include "TestCoverageConsole/TestBasic.hpp"
 #include "TestCoverageConsole/TestThread.hpp"
 #include "TestCoverageConsole/SpecialLineInfo.hpp"
-#include "TestCoverageConsole/FileWithSpecialCharéàè.hpp"
+#include "TestCoverageConsole/FileWithSpecialCharï¿½ï¿½ï¿½.hpp"
 #include "TestCoverageConsole/TestDiff.hpp"
 
+// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 #include "TestCoverageSharedLib/TestCoverageSharedLib.hpp"
+#endif
 #include "TestCoverageOptimizedBuild/TestCoverageOptimizedBuild.hpp"
 
 #include "TestTools.hpp"
@@ -186,6 +189,8 @@ namespace CppCoverageTest
 	}
 
 	//-------------------------------------------------------------------------
+	// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	TEST_F(CodeCoverageRunnerTest, RunCoverageDll)
 	{			
 		auto mainSharedLibFile = TestCoverageSharedLib::GetMainCppPath().wstring();
@@ -201,6 +206,7 @@ namespace CppCoverageTest
 		ASSERT_EQ(nullptr, file[line++]);
 		TestLine(file, line++, false);
 	}
+#endif
 	
 	//-------------------------------------------------------------------------
 	TEST_F(CodeCoverageRunnerTest, RunThread)
@@ -320,6 +326,8 @@ namespace CppCoverageTest
 	}
 
 	//-------------------------------------------------------------------------
+	// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	TEST_F(CodeCoverageRunnerTest, TestFileInSeveralModules)
 	{
 		CoverageArgs args{
@@ -347,6 +355,7 @@ namespace CppCoverageTest
 			TestLine(*file, sharedFunctionLine + 4, true);
 		}
 	}
+#endif
 
 	//-------------------------------------------------------------------------
 	TEST_F(CodeCoverageRunnerTest, SpecialLineInfo)

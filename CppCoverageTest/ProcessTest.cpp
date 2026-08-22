@@ -22,7 +22,10 @@
 #include "CppCoverage/Process.hpp"
 
 #include "TestCoverageConsole/TestCoverageConsole.hpp"
+// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 #include "TestCoverageSharedLib/TestCoverageSharedLib.hpp"
+#endif
 #include "TestHelper/Tools.hpp"
 
 namespace cov = CppCoverage;
@@ -40,6 +43,8 @@ namespace CppCoverageTest
 	}
 
 	//-------------------------------------------------------------------------
+	// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	TEST(Process, InvalidProgram)
 	{
 		cov::StartInfo startInfo{TestCoverageSharedLib::GetOutputBinaryPath()};
@@ -52,6 +57,7 @@ namespace CppCoverageTest
 			        e.what(), cov::Process::CheckIfValidExecutableMessage));
 		    });
 	}
+#endif
 
 	//-------------------------------------------------------------------------
 	TEST(Process, FileNotExists)

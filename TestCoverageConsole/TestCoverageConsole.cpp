@@ -20,14 +20,17 @@
 #include <string>
 #include <iostream>
 
+// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 #include "TestCoverageSharedLib/TestCoverageSharedLib.hpp"
+#endif
 #include "TestCoverageOptimizedBuild/TestCoverageOptimizedBuild.hpp"
 
 #include "SpecialLineInfo.hpp"
 #include "TestCoverageConsole.hpp"
 #include "TestBasic.hpp"
 #include "TestThread.hpp"
-#include "FileWithSpecialCharéàè.hpp"
+#include "FileWithSpecialCharï¿½ï¿½ï¿½.hpp"
 #include "TestDiff.hpp"
 
 namespace
@@ -45,11 +48,14 @@ namespace
 	}	
 
 	//-----------------------------------------------------------------------------
+	// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	void TestFileInSeveralModules()
 	{
 		TestCoverageSharedLib::CallSharedFunctionFromSharedLib();
 		TestCoverageSharedLib::SharedFunction(false);
 	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -66,7 +72,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		else if (type == TestCoverageConsole::TestThread)
 			TestCoverageConsole::RunThread();
 		else if (type == TestCoverageConsole::TestSharedLib)
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 			TestCoverageSharedLib::IsOdd(42);
+#else
+			std::wcerr << L"TestSharedLib is not supported on ARM64." << std::endl;
+#endif
 		else if (type == TestCoverageConsole::TestThrowHandledException)
 			ThrowHandledException();
 		else if (type == TestCoverageConsole::TestThrowUnHandledCppException)
@@ -78,7 +88,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		else if (type == TestCoverageConsole::TestChildProcess)
 			TestCoverageConsole::RunChildProcesses(argc, argv);
 		else if (type == TestCoverageConsole::TestFileInSeveralModules)
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 			TestFileInSeveralModules();
+#else
+			std::wcerr << L"TestFileInSeveralModules is not supported on ARM64." << std::endl;
+#endif
 		else if (type == TestCoverageConsole::TestSpecialLineInfo)
 			TestCoverageConsole::SpecialLineInfo();
 		else if (false) // to have GetFileWithSpecialChars symbol in release.

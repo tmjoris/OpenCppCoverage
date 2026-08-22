@@ -29,7 +29,10 @@
 #include "Exporter/binary/CoverageDataDeserializer.hpp"
 
 #include "TestHelper/CoverageDataComparer.hpp"
+// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 #include "TestCoverageSharedLib/TestCoverageSharedLib.hpp"
+#endif
 
 #include "Tools/Tool.hpp"
 
@@ -111,6 +114,8 @@ namespace OpenCppCoverageTest
 	}	
 
 	//-------------------------------------------------------------------------
+	// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	TEST(ImportExportTest, ExportPlugin)
 	{
 		TestHelper::TemporaryPath tempPath{
@@ -122,4 +127,5 @@ namespace OpenCppCoverageTest
 		RunCoverage({BuildExportTypeString(pluginName, output)}, output);
 		ASSERT_NE(0, std::filesystem::file_size(output));
 	}
+#endif
 }

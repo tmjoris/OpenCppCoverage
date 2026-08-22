@@ -23,7 +23,10 @@
 #include "CppCoverage/ProgramOptions.hpp"
 #include "OpenCppCoverage/OpenCppCoverage.hpp"
 #include "TestCoverageConsole/TestCoverageConsole.hpp"
+// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 #include "TestCoverageSharedLib/TestCoverageSharedLib.hpp"
+#endif
 
 #include "OpenCppCoverageTestTools.hpp"
 
@@ -35,9 +38,12 @@ namespace OpenCppCoverageTest
 	namespace
 	{
 		auto testCoverageConsole = TestCoverageConsole::GetOutputBinaryPath();
+		// TestCoverageSharedLib is built with /clr, which is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 		auto testCoverageSharedLib = TestCoverageSharedLib::GetOutputBinaryPath();
 		
 		auto testCoverageSharedLibMain = TestCoverageSharedLib::GetMainCppPath();
+#endif
 
 		//---------------------------------------------------------------------
 		bool FindFilename(const std::wstring& filename, const fs::path& outputDirectory)
@@ -112,6 +118,9 @@ namespace OpenCppCoverageTest
 	}
 	
 	//-------------------------------------------------------------------------
+	// The following tests compare against TestCoverageSharedLib, which is built
+	// with /clr and is not supported on ARM64.
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	TEST_F(CommandLineOptionsTest, SelectedModulesOption)
 	{		
 		RunCoverageOnProgram({ { cov::ProgramOptions::SelectedModulesOption, testCoverageConsole.string() } });
@@ -154,6 +163,7 @@ namespace OpenCppCoverageTest
 		CheckFilenameExistsInOutput(testCoverageConsole, true);
 		CheckFilenameExistsInOutput(testCoverageSharedLib, true);
 	}
+#endif
 
 	//-------------------------------------------------------------------------
 	TEST_F(CommandLineOptionsTest, FailureExitCode)
