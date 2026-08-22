@@ -46,7 +46,7 @@
 #include "TestCoverageConsole/TestBasic.hpp"
 #include "TestCoverageConsole/TestThread.hpp"
 #include "TestCoverageConsole/SpecialLineInfo.hpp"
-#include "TestCoverageConsole/FileWithSpecialCharï¿½ï¿½ï¿½.hpp"
+#include "TestCoverageConsole/FileWithSpecialCharéàè.hpp"
 #include "TestCoverageConsole/TestDiff.hpp"
 
 // TestCoverageSharedLib is built with /clr, which is not supported on ARM64.

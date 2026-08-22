@@ -30,7 +30,7 @@
 #include "TestCoverageConsole.hpp"
 #include "TestBasic.hpp"
 #include "TestThread.hpp"
-#include "FileWithSpecialCharï¿½ï¿½ï¿½.hpp"
+#include "FileWithSpecialCharéàè.hpp"
 #include "TestDiff.hpp"
 
 namespace
