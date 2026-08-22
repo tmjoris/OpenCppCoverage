@@ -20,6 +20,7 @@
 
 #pragma warning(disable: 4244) // conversion from '__int64' to 'int', possible loss of data
 #pragma warning(disable: 4267) // conversion from 'size_t' to a smaller type, possible loss of data
+#pragma warning(disable: 4018) // signed/unsigned mismatch (absl::log_internal::Check_GEImpl in newer protobuf/abseil headers, arm64-windows from-source build)
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
