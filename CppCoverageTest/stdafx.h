@@ -19,11 +19,28 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-// Needed so ASSERT_EQ/EXPECT_EQ can stream boost::optional<T> values (e.g.
-// boost::optional<std::filesystem::path>) in failure messages; without it,
-// boost::optional's own operator<< is only declared, not defined, and any
-// use of it hits a static_assert. FileSystemMock.hpp separately defines a
-// PrintTo() for boost::optional<std::filesystem::file_time_type>, which is
-// not itself streamable and is therefore excluded via GTest/GMock's PrintTo
-// > operator<< priority instead of relying on this header.
-#include <boost/optional/optional_io.hpp>
+// boost::optional<T> unconditionally declares its own operator<< (in
+// optional.hpp), gated by a static_assert requiring optional_io.hpp - and
+// even with that included, it requires T itself to be streamable via a
+// narrow std::ostream, which is not true for every T used in this test
+// suite (e.g. std::filesystem::file_time_type isn't streamable at all;
+// CppCoverage::Options only has a std::wostream operator<<). Rather than
+// fix this per-T as each one surfaces a static_assert or compile error,
+// define a generic PrintTo() for boost::optional<T> here (found via ADL,
+// and given priority by GTest/GMock over operator<< for any T since it is
+// more specialized than the generic ::testing::internal::PrintTo<T>
+// fallback). It delegates to GTest's own UniversalPrinter<T>, which
+// already handles arbitrary T gracefully (falling back to a raw byte dump
+// if nothing else applies), so this never fails to compile regardless of
+// whether T is printable.
+namespace boost
+{
+	template <typename T>
+	void PrintTo(const boost::optional<T>& value, std::ostream* os)
+	{
+		if (value)
+			::testing::internal::UniversalPrinter<T>::Print(*value, os);
+		else
+			*os << "none";
+	}
+}
