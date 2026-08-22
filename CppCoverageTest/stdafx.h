@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <boost/optional.hpp>
 
 // boost::optional<T> unconditionally declares its own operator<< (in
 // optional.hpp), gated by a static_assert requiring optional_io.hpp - and
