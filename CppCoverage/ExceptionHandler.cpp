@@ -86,6 +86,16 @@ namespace CppCoverage
 			<< L" addr=" << exceptionRecord.ExceptionAddress
 			<< L" hProcess=" << hProcess << std::endl;
 
+		if (exceptionCode == EXCEPTION_ACCESS_VIOLATION &&
+			exceptionRecord.NumberParameters >= 2)
+		{
+			auto accessType = exceptionRecord.ExceptionInformation[0];
+			auto faultingAddress = exceptionRecord.ExceptionInformation[1];
+			std::wcerr << L"[DIAG]   access violation type="
+				<< (accessType == 0 ? L"READ" : accessType == 1 ? L"WRITE" : accessType == 8 ? L"EXECUTE" : L"?")
+				<< L" faultingAddress=0x" << std::hex << faultingAddress << std::dec << std::endl;
+		}
+
 		if (exceptionDebugInfo.dwFirstChance)
 		{
 			auto it = breakPointExceptionCode_.find(exceptionCode);

@@ -106,12 +106,12 @@ jobs:
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=ARM64
 
       - name: Run CppCoverageTest
-        # TEMPORARY: narrowed to a single failing test plus diagnostic
-        # logging (see ExceptionHandler.cpp / CodeCoverageRunner.cpp) while
-        # root-causing a remaining ARM64 breakpoint-handling issue. Revert
-        # to the full suite (with the OptimizedBuild/DebugInformationEnumerator
-        # exclusions) once diagnosed.
-        run: .\ARM64\Debug\CppCoverageTest.exe --gtest_filter=CodeCoverageRunnerTest.RunCoverage
+        # TEMPORARY: narrowed to a few failing tests plus diagnostic
+        # logging (see ExceptionHandler.cpp / CodeCoverageRunner.cpp /
+        # ExecutedAddressManager.cpp) while root-causing a remaining ARM64
+        # breakpoint-handling issue. Revert to the full suite (with the
+        # OptimizedBuild/DebugInformationEnumerator exclusions) once diagnosed.
+        run: .\ARM64\Debug\CppCoverageTest.exe --gtest_filter=CodeCoverageRunnerTest.RunCoverage:CodeCoverageRunnerTest.HandledException:CodeCoverageRunnerTest.UnHandledCppException
 
       - name: Run ExporterTest
         run: .\ARM64\Debug\ExporterTest.exe

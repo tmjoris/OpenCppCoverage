@@ -18,6 +18,7 @@
 #include "ExecutedAddressManager.hpp"
 
 #include <unordered_map>
+#include <iostream> // TEMPORARY ARM64 diagnostic
 #include <boost/container/small_vector.hpp>
 
 #include "tools/Log.hpp"
@@ -97,6 +98,9 @@ namespace CppCoverage
 		auto& file = module.files_[filename];
 
 		LOG_TRACE << "RegisterAddress: " << address << " for " << filename << ":" << lineNumber;
+		// TEMPORARY ARM64 diagnostic: remove once root-caused.
+		std::wcerr << L"[DIAG] RegisterAddress addr=" << address << L" line=" << lineNumber
+			<< L" instr=0x" << std::hex << instructionValue << std::dec << std::endl;
 
 		// Different {filename, line} can have the same address.
 		// Same {filename, line} can have several addresses.		
@@ -132,9 +136,16 @@ namespace CppCoverage
 		auto it = addressLineMap_.find(address);
 
 		if (it == addressLineMap_.end())
+		{
+			std::wcerr << L"[DIAG] MarkAddressAsExecuted addr=" << address << L" NOT REGISTERED" << std::endl;
 			return boost::none;
+		}
 
 		auto& line = it->second;
+		// TEMPORARY ARM64 diagnostic: remove once root-caused.
+		std::wcerr << L"[DIAG] MarkAddressAsExecuted addr=" << address << L" markingCount="
+			<< line.hasBeenExecutedCollection_.size() << L" instructionToRestore=0x"
+			<< std::hex << line.instructionToRestore_ << std::dec << std::endl;
 
 		for (bool* hasBeenExecuted : line.hasBeenExecutedCollection_)
 		{
