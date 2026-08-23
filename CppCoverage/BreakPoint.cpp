@@ -110,27 +110,24 @@ namespace CppCoverage
 	//-------------------------------------------------------------------------
 	void BreakPoint::AdjustEipAfterBreakPointRemoval(HANDLE hThread) const
 	{
-#if defined(_M_ARM64) || defined(_M_ARM64EC)
-		// On ARM64, the PC captured at a BRK trap already points at the BRK
-		// instruction itself (unlike x86, where the CPU leaves Rip/Eip one
-		// byte *past* the 1-byte INT3). RemoveBreakPoint has already
-		// restored the original 4-byte instruction at that same address, so
-		// execution can resume from the unmodified PC: no register rewind
-		// is needed here.
-		(void)hThread;
-#else
 		CONTEXT lcContext;
 		lcContext.ContextFlags = CONTEXT_ALL;
 		if (!GetThreadContext(hThread, &lcContext))
 			THROW_LAST_ERROR("Error in GetThreadContext", GetLastError());
 
-#ifdef _WIN64
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+		// On ARM64, like x86's 1-byte INT3, the CPU leaves Pc just *past*
+		// the trapping instruction once the BRK executes. Since BRK is
+		// always 4 bytes wide, move Pc back by 4 bytes so execution resumes
+		// at (and re-executes) the original instruction that
+		// RemoveBreakPoint has just restored at that address.
+		lcContext.Pc -= 4;
+#elif defined(_WIN64)
 		--lcContext.Rip; // Move back one byte
 #else
 		--lcContext.Eip; // Move back one byte
 #endif
 		if (!SetThreadContext(hThread, &lcContext))
 			THROW_LAST_ERROR("Error in SetThreadContext", GetLastError());
-#endif
 	}
 }
