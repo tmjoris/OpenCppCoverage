@@ -18,8 +18,6 @@
 #include "ExceptionHandler.hpp"
 #include "ProgramOptions.hpp"
 
-#include <iostream> // TEMPORARY ARM64 diagnostic
-
 #include "Tools/ScopedAction.hpp"
 #include "Tools/Tool.hpp"
 
@@ -78,24 +76,6 @@ namespace CppCoverage
 		const auto& exceptionRecord = exceptionDebugInfo.ExceptionRecord;
 		const auto exceptionCode = exceptionRecord.ExceptionCode;
 
-		// TEMPORARY ARM64 diagnostic: print every exception event unconditionally
-		// (bypassing boost::log severity filtering) to understand exception
-		// dispatch ordering/codes on ARM64. Remove once root-caused.
-		std::wcerr << L"[DIAG] HandleException code=0x" << std::hex << exceptionCode
-			<< std::dec << L" firstChance=" << exceptionDebugInfo.dwFirstChance
-			<< L" addr=" << exceptionRecord.ExceptionAddress
-			<< L" hProcess=" << hProcess << std::endl;
-
-		if (exceptionCode == EXCEPTION_ACCESS_VIOLATION &&
-			exceptionRecord.NumberParameters >= 2)
-		{
-			auto accessType = exceptionRecord.ExceptionInformation[0];
-			auto faultingAddress = exceptionRecord.ExceptionInformation[1];
-			std::wcerr << L"[DIAG]   access violation type="
-				<< (accessType == 0 ? L"READ" : accessType == 1 ? L"WRITE" : accessType == 8 ? L"EXECUTE" : L"?")
-				<< L" faultingAddress=0x" << std::hex << faultingAddress << std::dec << std::endl;
-		}
-
 		if (exceptionDebugInfo.dwFirstChance)
 		{
 			auto it = breakPointExceptionCode_.find(exceptionCode);
@@ -107,21 +87,16 @@ namespace CppCoverage
 				if (std::find(processHandles.begin(), processHandles.end(), hProcess) == processHandles.end())
 				{
 					processHandles.push_back(hProcess);
-					std::wcerr << L"[DIAG]   -> treated as ignorable first breakpoint for this process" << std::endl;
 				}
 				else
 				{
-					std::wcerr << L"[DIAG]   -> treated as BreakPoint (coverage)" << std::endl;
 					return ExceptionHandlerStatus::BreakPoint;
 				}
 			}
 
-			std::wcerr << L"[DIAG]   -> FirstChanceException (DBG_EXCEPTION_NOT_HANDLED)" << std::endl;
 			return ExceptionHandlerStatus::FirstChanceException;
 		}
 
-		std::wcerr << L"[DIAG]   -> second chance / unhandled" << std::endl;
-				
 		message << std::endl << std::endl;
 		message << Tools::GetSeparatorLine() << std::endl;
 		message << L"*** ";

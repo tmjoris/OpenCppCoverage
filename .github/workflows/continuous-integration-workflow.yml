@@ -106,12 +106,11 @@ jobs:
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=ARM64
 
       - name: Run CppCoverageTest
-        # TEMPORARY: narrowed to a few failing tests plus diagnostic
-        # logging (see ExceptionHandler.cpp / CodeCoverageRunner.cpp /
-        # ExecutedAddressManager.cpp) while root-causing a remaining ARM64
-        # breakpoint-handling issue. Revert to the full suite (with the
-        # OptimizedBuild/DebugInformationEnumerator exclusions) once diagnosed.
-        run: .\ARM64\Debug\CppCoverageTest.exe --gtest_filter=CodeCoverageRunnerTest.RunCoverage:CodeCoverageRunnerTest.HandledException:CodeCoverageRunnerTest.UnHandledCppException
+        # OptimizedBuild requires VS2013 (same as x64, and ARM64 never had a
+        # VS2013 toolset). DebugInformationEnumeratorTest.Enumerate is
+        # excluded due to a benign PDB/codegen discrepancy in a dead-code
+        # test fixture on ARM64.
+        run: .\ARM64\Debug\CppCoverageTest.exe --gtest_filter=-CodeCoverageRunnerTest.OptimizedBuild:DebugInformationEnumeratorTest.Enumerate
 
       - name: Run ExporterTest
         run: .\ARM64\Debug\ExporterTest.exe
