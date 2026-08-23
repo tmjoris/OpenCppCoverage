@@ -105,6 +105,47 @@ jobs:
       - name: Build solution
         run: msbuild /m CppCoverage.sln /p:Configuration=Debug /p:Platform=ARM64
 
+      # A green build/link exit code doesn't prove the output is genuinely
+      # ARM64 (a stale artifact or a toolset misconfiguration could still
+      # silently produce x64/x86). Read each PE's own machine-type field
+      # directly, per the verify-artifact-architecture skill, as a hard gate.
+      - name: Verify build output is genuinely ARM64
+        shell: pwsh
+        run: |
+          $machineMap = @{ 0x014C = "x86"; 0x8664 = "x64"; 0xAA64 = "arm64"; 0x01C0 = "arm32" }
+          $binaries = Get-ChildItem -Path .\ARM64\Debug -Recurse -File -Include *.exe,*.dll -ErrorAction SilentlyContinue
+          if (-not $binaries) { throw "No binaries found under ARM64\Debug to verify" }
+
+          $checked = 0
+          $failures = 0
+          foreach ($bin in $binaries) {
+            $stream = [System.IO.File]::OpenRead($bin.FullName)
+            try {
+              $header = New-Object byte[] 4096
+              $bytesRead = $stream.Read($header, 0, $header.Length)
+            } finally {
+              $stream.Close()
+            }
+            if ($bytesRead -lt 0x40 -or $header[0] -ne 0x4D -or $header[1] -ne 0x5A) { continue } # not PE (e.g. MSIL-only stub)
+            $peOffset = [BitConverter]::ToUInt32($header, 0x3C)
+            if ($bytesRead -lt ($peOffset + 6) -or $header[$peOffset] -ne 0x50 -or $header[$peOffset + 1] -ne 0x45) { continue }
+
+            $machine = [BitConverter]::ToUInt16($header, $peOffset + 4)
+            $arch = $machineMap[$machine]
+            if (-not $arch) { $arch = "unknown (0x{0:x})" -f $machine }
+            $checked++
+
+            if ($arch -eq "arm64") {
+              Write-Host ("  OK    0x{0:x4}  {1}" -f $machine, $bin.FullName)
+            } else {
+              Write-Host ("  FAIL  0x{0:x4}  {1}  (expected arm64, got {2})" -f $machine, $bin.FullName, $arch)
+              $failures++
+            }
+          }
+
+          Write-Host "Checked $checked PE binaries under ARM64\Debug."
+          if ($failures -gt 0) { throw "$failures binaries did not report the ARM64 (0xAA64) machine type" }
+
       - name: Run CppCoverageTest
         # OptimizedBuild requires VS2013 (same as x64, and ARM64 never had a
         # VS2013 toolset). DebugInformationEnumeratorTest.Enumerate and
