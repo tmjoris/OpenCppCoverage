@@ -72,8 +72,9 @@ namespace Tools
 		while (totalWritten < size)
 		{
 			auto startBuffer = static_cast<char*>(buffer) + totalWritten;
+			auto startAddress = static_cast<char*>(address) + totalWritten;
 			if (!::WriteProcessMemory(hProcess,
-			                          address,
+			                          startAddress,
 			                          startBuffer,
 			                          size - totalWritten,
 			                          &written))
@@ -84,7 +85,17 @@ namespace Tools
 			if (written == 0)
 				THROW("Cannot write process memory");
 
-			if (!FlushInstructionCache(hProcess, startBuffer, written))
+			// FlushInstructionCache must be given an address within the
+			// *target* process (hProcess), i.e. the same address just
+			// written to, not a pointer into our own local source buffer.
+			// x86/x64 have a coherent instruction cache, so this call is
+			// effectively a no-op there and passing the wrong address never
+			// mattered; ARM64's weakly-coherent instruction cache means the
+			// CPU can otherwise still fetch stale/torn bytes at the address
+			// we just patched (e.g. an injected BRK breakpoint), which
+			// manifests as a spurious illegal-instruction fault when that
+			// code later executes.
+			if (!FlushInstructionCache(hProcess, startAddress, written))
 				THROW("Cannot flush memory:");
 			totalWritten += written;
 		}

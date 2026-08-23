@@ -61,11 +61,15 @@ namespace CppCoverage
 	}
 
 #if defined(_M_ARM64) || defined(_M_ARM64EC)
-	// BRK #0xF000: the same software-breakpoint encoding used by
-	// ntdll!DbgBreakPoint on Windows ARM64 (in-memory little-endian bytes:
-	// 00 F0 3E D4), so it is recognized consistently by the OS and other
-	// debugging tools.
-	const BreakPoint::OpCodeValue BreakPoint::breakPointInstruction = 0xD43EF000;
+	// BRK #0xF000: the same software-breakpoint encoding Windows itself
+	// uses (ntdll!DbgBreakPoint; #0xf001/#0xf002/... are reserved for
+	// assertion failure/debug service/fastfail/etc, see
+	// https://devblogs.microsoft.com/oldnewthing/20220822-00/?p=107032),
+	// so it is recognized consistently by the OS and other debugging
+	// tools. Encoding is BRK's fixed 0xD4200000 base with imm16 placed at
+	// bits [20:5] (i.e. imm16 << 5): 0xD4200000 | (0xF000 << 5) =
+	// 0xD43E0000 (in-memory little-endian bytes: 00 00 3E D4).
+	const BreakPoint::OpCodeValue BreakPoint::breakPointInstruction = 0xD43E0000;
 #else
 	const BreakPoint::OpCodeValue BreakPoint::breakPointInstruction = 0xCC;
 #endif
