@@ -29,4 +29,4 @@ VSPackage/OpenCppCoverage-x86
 CoverageData.pb.h
 CoverageData.pb.cc
 
-.clang-format
+.clang-formatarm64_log_*.txt
