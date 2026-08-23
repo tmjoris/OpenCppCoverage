@@ -19,9 +19,12 @@
 
 #include <sstream>
 #include <iostream> // TEMPORARY ARM64 diagnostic
+#include <iomanip> // TEMPORARY ARM64 diagnostic
 #include <boost/optional.hpp>
 
 #include "tools/Log.hpp"
+
+#include "Tools/ProcessMemory.hpp" // TEMPORARY ARM64 diagnostic
 
 #include "Plugin/Exporter/CoverageData.hpp"
 #include "Debugger.hpp"
@@ -178,13 +181,51 @@ namespace CppCoverage
 		auto oldInstruction = executedAddressManager_->MarkAddressAsExecuted(address);
 
 		// TEMPORARY ARM64 diagnostic: remove once root-caused.
-		std::wcerr << L"[DIAG] OnBreakPoint addr=" << addressValue
-			<< L" found=" << (oldInstruction ? L"yes" : L"no") << std::endl;
+		{
+			CONTEXT diagContext;
+			diagContext.ContextFlags = CONTEXT_ALL;
+			std::wcerr << L"[DIAG] OnBreakPoint addr=" << addressValue
+				<< L" found=" << (oldInstruction ? L"yes" : L"no");
+			if (GetThreadContext(hThread, &diagContext))
+			{
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+				std::wcerr << L" contextPc=0x" << std::hex << diagContext.Pc << std::dec;
+#else
+				std::wcerr << L" contextRip=0x" << std::hex << diagContext.Rip << std::dec;
+#endif
+			}
+			else
+			{
+				std::wcerr << L" GetThreadContext failed=" << GetLastError();
+			}
+			std::wcerr << std::endl;
+		}
 
 		if (oldInstruction)
 		{
 			breakpoint_->RemoveBreakPoint(address, *oldInstruction);
 			breakpoint_->AdjustEipAfterBreakPointRemoval(hThread);
+
+			// TEMPORARY ARM64 diagnostic: remove once root-caused.
+			{
+				CONTEXT diagContext;
+				diagContext.ContextFlags = CONTEXT_ALL;
+				std::wcerr << L"[DIAG]   after restore+adjust:";
+				if (GetThreadContext(hThread, &diagContext))
+				{
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+					std::wcerr << L" contextPc=0x" << std::hex << diagContext.Pc << std::dec;
+#else
+					std::wcerr << L" contextRip=0x" << std::hex << diagContext.Rip << std::dec;
+#endif
+				}
+				auto restoredBytes = Tools::ReadProcessMemory(hProcess, addressValue, sizeof(*oldInstruction));
+				std::wcerr << L" restoredBytes=0x" << std::hex;
+				for (auto it = restoredBytes.rbegin(); it != restoredBytes.rend(); ++it)
+					std::wcerr << std::setw(2) << std::setfill(L'0') << static_cast<unsigned>(*it);
+				std::wcerr << std::dec << std::endl;
+			}
+
 			return true;
 		}
 
