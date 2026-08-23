@@ -18,6 +18,7 @@
 #include "CodeCoverageRunner.hpp"
 
 #include <sstream>
+#include <iostream> // TEMPORARY ARM64 diagnostic
 #include <boost/optional.hpp>
 
 #include "tools/Log.hpp"
@@ -175,6 +176,10 @@ namespace CppCoverage
 		auto addressValue = exceptionRecord.ExceptionAddress;
 		Address address{ hProcess, addressValue };
 		auto oldInstruction = executedAddressManager_->MarkAddressAsExecuted(address);
+
+		// TEMPORARY ARM64 diagnostic: remove once root-caused.
+		std::wcerr << L"[DIAG] OnBreakPoint addr=" << addressValue
+			<< L" found=" << (oldInstruction ? L"yes" : L"no") << std::endl;
 
 		if (oldInstruction)
 		{
