@@ -260,8 +260,12 @@ jobs:
             "TestHelper.dll", "gmock.dll"
           )
 
-          Get-ChildItem -Path $releaseDir -File -Include *.exe, *.dll |
-            Where-Object { $excludeNames -notcontains $_.Name } |
+          # NOTE: -Include only filters when -Recurse is used or -Path itself is
+          # wildcarded (e.g. "$releaseDir\*") - with a plain directory path and no
+          # -Recurse it silently matches nothing. Filter by extension explicitly
+          # instead so this can't silently package an empty binary set.
+          Get-ChildItem -Path $releaseDir -File |
+            Where-Object { $_.Extension -in ".exe", ".dll" -and $excludeNames -notcontains $_.Name } |
             Copy-Item -Destination $stagingDir
 
           Copy-Item -Path (Join-Path $releaseDir "Template") -Destination (Join-Path $stagingDir "Template") -Recurse -Force
@@ -269,6 +273,18 @@ jobs:
           Copy-Item -Path "README.md" -Destination $stagingDir
 
           Get-ChildItem $stagingDir -File | ForEach-Object { Write-Host "  $($_.Name)" }
+
+          # Hard gate: don't silently ship (or let this step silently succeed with) a
+          # package missing the actual product binary - fail loudly instead.
+          if (-not (Test-Path (Join-Path $stagingDir "OpenCppCoverage.exe"))) {
+            throw "OpenCppCoverage.exe is missing from $stagingDir - packaging step matched no binaries"
+          }
+          $dllCount = (Get-ChildItem -Path $stagingDir -File -Filter *.dll).Count
+          Write-Host "Packaged $dllCount DLLs alongside OpenCppCoverage.exe"
+          if ($dllCount -eq 0) {
+            throw "No DLLs were copied into $stagingDir - expected at least the vcpkg-built runtime dependencies"
+          }
+
           Compress-Archive -Path "$stagingDir\*" -DestinationPath "OpenCppCoverage-arm64.zip" -Force
           Write-Host "Packaged OpenCppCoverage-arm64.zip"
 
