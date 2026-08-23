@@ -100,3 +100,13 @@ REM ThirdParty.1.4.0.nupkg from its own output directory (which doubles as
 REM a valid local NuGet feed) into packages\.
 powershell -NoProfile -Command "Invoke-WebRequest -OutFile nuget.exe https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 .\nuget.exe install ThirdParty -Source %ROOT_FOLDER%\vcpkg -OutputDirectory ..\..\..\packages
+
+REM The exported package auto-imports a vcpkg.targets that runs
+REM "<package>\vcpkg.exe z-applocal" as a post-build step to copy each
+REM target's runtime DLL dependencies (e.g. gtest.dll/gmock.dll, built as
+REM shared libraries here) next to the built exe/dll. `vcpkg export
+REM --nuget` does not itself place a copy of vcpkg.exe inside the exported
+REM package, so without this copy every applocal-deps invocation silently
+REM fails ("vcpkg.exe" not recognized, exit code 9009), leaving required
+REM DLLs missing and every test executable failing to load at runtime.
+copy /Y vcpkg.exe ..\..\..\packages\thirdparty.1.4.0\vcpkg.exe
