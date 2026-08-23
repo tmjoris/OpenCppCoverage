@@ -112,7 +112,6 @@ jobs:
       - name: Verify build output is genuinely ARM64
         shell: pwsh
         run: |
-          $machineMap = @{ 0x014C = "x86"; 0x8664 = "x64"; 0xAA64 = "arm64"; 0x01C0 = "arm32" }
           $binaries = Get-ChildItem -Path .\ARM64\Debug -Recurse -File -Include *.exe,*.dll -ErrorAction SilentlyContinue
           if (-not $binaries) { throw "No binaries found under ARM64\Debug to verify" }
 
@@ -130,9 +129,14 @@ jobs:
             $peOffset = [BitConverter]::ToUInt32($header, 0x3C)
             if ($bytesRead -lt ($peOffset + 6) -or $header[$peOffset] -ne 0x50 -or $header[$peOffset + 1] -ne 0x45) { continue }
 
-            $machine = [BitConverter]::ToUInt16($header, $peOffset + 4)
-            $arch = $machineMap[$machine]
-            if (-not $arch) { $arch = "unknown (0x{0:x})" -f $machine }
+            $machine = [int][BitConverter]::ToUInt16($header, $peOffset + 4)
+            switch ($machine) {
+              0x014C { $arch = "x86" }
+              0x8664 { $arch = "x64" }
+              0xAA64 { $arch = "arm64" }
+              0x01C0 { $arch = "arm32" }
+              default { $arch = "unknown (0x{0:x})" -f $machine }
+            }
             $checked++
 
             if ($arch -eq "arm64") {
